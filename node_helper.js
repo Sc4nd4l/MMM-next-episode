@@ -1,16 +1,15 @@
 var NodeHelper = require('node_helper');
 var request = require('request');
-var qrcode = require('qrcode');  // Import the qrcode library
-var uuidv4 = require('uuid').v4; // Import the uuid library
+var qrcode = require('qrcode');  
+var uuidv4 = require('uuid').v4;
 
 module.exports = NodeHelper.create({
     start: function() {
         console.log("next-episode, Node Helper started!");
-        this.timer = null; // Declare a variable to hold the interval timer
+        this.timer = null; 
     },
 
     stop: function() {
-        // Clear the interval when the module is stopped
         if (this.timer !== null) {
             clearInterval(this.timer);
             this.timer = null;
@@ -22,37 +21,29 @@ module.exports = NodeHelper.create({
         if (notification === 'GET_DATA') {
             this.getData(payload);
 
-            // Clear existing timer if any
             if (this.timer !== null) {
                 clearInterval(this.timer);
             }
 
-            // Enforce minimum update interval of 180 minutes
             var updateInterval = payload.updateInterval < 180 ? 180 : payload.updateInterval;
 
-            // Set interval to fetch data as per the configuration
             var self = this;
             this.timer = setInterval(function() {
                 self.getData(payload);
-            }, updateInterval * 60 * 1000); // updateInterval in minutes
+            }, updateInterval * 60 * 1000);
         }
     },
 
     getData: function(config) {
         var self = this;
-        // Check if id and hash_key are empty
         if(config.id === '' && config.hash_key === '') {
-            // Generate unique device ID
             var deviceId = uuidv4();
-            // Create URL for QR code
             var url = `https://next-episode.net/api/magicmirror/v1/services.php?service=link&device_id=${deviceId}&username=USERNAME&password=PASSWORD`;
-            // Generate QR code
             qrcode.toDataURL(url, function (err, url) {
                 if (err) {
                     console.log("next-episode, Error generating QR Code: ", err);
                 } else {
                     console.log("next-episode, QR Code: ", url);
-                    // Send the QR code URL to the frontend so it can be displayed
                     self.sendSocketNotification('QR_CODE', url);
                 }
             });
